@@ -70,3 +70,53 @@ def calculate_put_option_price(stock_price, strike_price, time_to_expiry_in_year
 
     return (present_value_of_strike * cumulative_normal_distribution(-d2_value)
             - stock_price * cumulative_normal_distribution(-d1_value))
+
+
+# ---------------------------------------------------------------------
+# Greeks
+# ---------------------------------------------------------------------
+
+def calculate_delta(stock_price, strike_price, time_to_expiry_in_years,
+                    risk_free_interest_rate, volatility, option_type):
+    d1_value = calculate_d1(stock_price, strike_price, time_to_expiry_in_years,
+                            risk_free_interest_rate, volatility)
+    if option_type == "call":
+        return cumulative_normal_distribution(d1_value)
+    if option_type == "put":
+        return cumulative_normal_distribution(d1_value) - 1
+    raise ValueError("option_type must be 'call' or 'put'")
+
+
+def calculate_gamma(stock_price, strike_price, time_to_expiry_in_years,
+                    risk_free_interest_rate, volatility):
+    d1_value = calculate_d1(stock_price, strike_price, time_to_expiry_in_years,
+                            risk_free_interest_rate, volatility)
+    return normal_probability_density(d1_value) / (
+        stock_price * volatility * math.sqrt(time_to_expiry_in_years))
+
+
+def calculate_theta(stock_price, strike_price, time_to_expiry_in_years,
+                    risk_free_interest_rate, volatility, option_type):
+    d1_value = calculate_d1(stock_price, strike_price, time_to_expiry_in_years,
+                            risk_free_interest_rate, volatility)
+    d2_value = calculate_d2(stock_price, strike_price, time_to_expiry_in_years,
+                            risk_free_interest_rate, volatility)
+    present_value_of_strike = strike_price * math.exp(-risk_free_interest_rate * time_to_expiry_in_years)
+
+    time_decay = -(stock_price * normal_probability_density(d1_value) * volatility) / (
+        2 * math.sqrt(time_to_expiry_in_years))
+
+    if option_type == "call":
+        return time_decay - risk_free_interest_rate * present_value_of_strike \
+            * cumulative_normal_distribution(d2_value)
+    if option_type == "put":
+        return time_decay + risk_free_interest_rate * present_value_of_strike \
+            * cumulative_normal_distribution(-d2_value)
+    raise ValueError("option_type must be 'call' or 'put'")
+
+
+def calculate_vega(stock_price, strike_price, time_to_expiry_in_years,
+                   risk_free_interest_rate, volatility):
+    d1_value = calculate_d1(stock_price, strike_price, time_to_expiry_in_years,
+                            risk_free_interest_rate, volatility)
+    return stock_price * normal_probability_density(d1_value) * math.sqrt(time_to_expiry_in_years)
